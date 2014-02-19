@@ -4,7 +4,8 @@ class varnish(
   $storageSize    = '256M',
   $ttl            = '60',
   $configTemplate = 'varnish/varnish.erb',
-  $configFile     = '/etc/varnish/default.vcl',
+  $vclFile        = '/etc/varnish/default.vcl',
+  $vclTemplate    = undef,
   $backends       = {
                       'default' => { host => '127.0.0.1', port => '80' },
                     }
@@ -29,15 +30,17 @@ class varnish(
     require => Package['varnish'],
   }
 
-  file { "${configFile}":
-    ensure  => file,
-    content => template('varnish/default.vcl.erb'),
-    notify  => Service['varnish'],
-    require => Package['varnish'],
+  if undef != $vclTemplate {
+    file { $vclFile:
+      ensure  => file,
+      content => template($vclTemplate),
+      notify  => Service['varnish'],
+      require => Package['varnish'],
+    }
   }
 
   service { 'varnish':
     ensure  => running,
-    require => [ Package['varnish'], File['/etc/sysconfig/varnish'], File["${configFile}"] ],
+    require => [ Package['varnish'], File['/etc/sysconfig/varnish'] ],
   }
 }
